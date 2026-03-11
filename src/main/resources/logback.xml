@@ -1,0 +1,23 @@
+<configuration>
+    <!-- Перенаправляем в System.out, чтобы не было красного фона в IDEA -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <!--
+                %d{HH:mm:ss.SSS}       – время
+                %highlight(%-5level)    – уровень с ANSI-цветом (ERROR красный, WARN жёлтый, INFO синий/серый)
+                %cyan(%logger{0})       – имя логгера (тег) голубым цветом, без пакетов
+                %msg%n                  – сообщение и перевод строки
+            -->
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{0}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Для библиотек можно установить уровень WARN, чтобы не засорять консоль -->
+    <logger name="io.grpc" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+</configuration>

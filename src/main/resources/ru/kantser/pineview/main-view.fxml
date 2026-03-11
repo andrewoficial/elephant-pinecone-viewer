@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ru.kantser.pineview.ui.MainWindow"
+            stylesheets="@styles.css">
+
+    <left>
+        <VBox prefWidth="260" spacing="12" styleClass="sidebar">
+            <padding>
+                <Insets top="24" right="20" bottom="20" left="24"/>
+            </padding>
+
+            <Label text="🌲 PineView" styleClass="title"/>
+            <Label text="Pinecone Client" styleClass="subtitle"/>
+
+            <Separator/>
+
+            <Label text="API Key" styleClass="label"/>
+            <TextField fx:id="apiKeyField" promptText="pcsk_..." styleClass="input"/>
+            <!-- Кнопки управления -->
+            <HBox spacing="8">
+                <Button fx:id="connectBtn" text="Connect"
+                        onAction="#handleConnect" styleClass="btn-primary" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="recheckBtn" text="↻"
+                        onAction="#handleRecheck" styleClass="btn-secondary"
+                        disable="true" prefWidth="40"/>
+            </HBox>
+            <!-- Таймер до следующей проверки -->
+            <Label fx:id="nextCheckLabel" text="" styleClass="timer-label"/>
+            <VBox VBox.vgrow="ALWAYS"/>
+
+
+            <!-- Контейнер для индикаторов -->
+            <VBox fx:id="statusContainer" spacing="8" styleClass="status-group">
+                <Label text="System Health" styleClass="section-label"/>
+            </VBox>
+
+            <Separator/>
+            <Label fx:id="apiStatusLabel" text="API: Disconnected" styleClass="status-footer"/>
+
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="16" styleClass="content-box">
+            <padding>
+                <Insets top="24" right="24" bottom="24" left="24"/>
+            </padding>
+            <!-- Заголовок -->
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Indexes" styleClass="header-title"/>
+                <Label fx:id="indexCountLabel" styleClass="header-subtitle"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="refreshIndexesBtn" text="↻ Refresh"
+                        onAction="#handleRefreshIndexes" styleClass="btn-small" disable="true"/>
+            </HBox>
+
+            <!-- Таблица индексов -->
+            <TableView fx:id="indexTable" styleClass="data-table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn text="Name" fx:id="colName" prefWidth="200"/>
+                    <TableColumn text="Dimension" fx:id="colDim" prefWidth="100"/>
+                    <TableColumn text="Metric" fx:id="colMetric" prefWidth="100"/>
+                    <TableColumn text="Vectors" fx:id="colVectors" prefWidth="100"/>
+                    <TableColumn text="Status" fx:id="colStatus" prefWidth="120"/>
+                </columns>
+            </TableView>
+
+            <!-- Плейсхолдер когда нет данных -->
+            <Label fx:id="emptyStateLabel"
+                   text="Connect to load your Pinecone indexes"
+                   styleClass="empty-label"/>
+        </VBox>
+    </center>
+
+</BorderPane>
