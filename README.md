@@ -27,14 +27,26 @@
 <details>
   <summary>🖼️ Нажмите, чтобы раскрыть галерею скриншотов</summary>
 
-  <!-- Вставьте сюда ссылки на скриншоты, например:
+  ### Главное окно
+  ![Главное окно](https://github.com/andrewoficial/elephant-pinecone-viewer/blob/master/doc/images/GUI-1.JPG?raw=true)
   
-  ![Главное окно]()
-  ![Просмотр записей](docs/screenshots/records-view.png)
-  ![Импорт данных](docs/screenshots/import-dialog.png)
-  -->
+  *Главное окно приложения с мониторингом статусов и списком индексов*
+
+  ### Конвертер в MarkDown
+  ![Просмотр записей](https://github.com/andrewoficial/elephant-pinecone-viewer/blob/master/doc/images/GUI-2.JPG?raw=true)
   
-  *Скриншоты будут добавлены позже.*
+  *Два поля ввода для быстрого преобразования*
+
+  ### Просмотр записей
+  ![Импорт данных](https://github.com/andrewoficial/elephant-pinecone-viewer/blob/master/doc/images/GUI-3.JPG?raw=true)
+  
+  *Отображение списка всех записей в таблице с предпросмотром*
+
+  ### Диалог добавления записи
+  ![Проверка обновлений](https://github.com/andrewoficial/elephant-pinecone-viewer/blob/master/doc/images/GUI-4.JPG?raw=true)
+  
+  *Добавление записи*
+
 </details>
 
 ---
