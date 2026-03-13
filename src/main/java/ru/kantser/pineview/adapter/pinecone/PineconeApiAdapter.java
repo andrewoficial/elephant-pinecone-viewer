@@ -3,20 +3,20 @@ package ru.kantser.pineview.adapter.pinecone;
 import io.pinecone.clients.Pinecone;
 import io.pinecone.clients.Index;
 import org.openapitools.db_control.client.model.IndexList;
-import org.openapitools.db_control.client.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.model.HealthReport;
 import ru.kantser.pineview.domain.model.RecordData;
 import ru.kantser.pineview.domain.model.ServiceStatus;
 import ru.kantser.pineview.domain.port.HealthCheckPort;
+import ru.kantser.pineview.domain.port.RecordPort;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class PineconeApiAdapter implements HealthCheckPort {
+public class PineconeApiAdapter implements HealthCheckPort, RecordPort {
     private static final Logger log = LoggerFactory.getLogger(PineconeApiAdapter.class);
 
     private Pinecone pinecone;

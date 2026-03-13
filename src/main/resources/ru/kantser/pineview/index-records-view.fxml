@@ -7,22 +7,24 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ru.kantser.pineview.ui.IndexRecordsWindow"
             stylesheets="@styles.css"
-            minWidth="900" minHeight="600">
+            minWidth="800" minHeight="400">
 
     <!-- Заголовок -->
     <top>
-        <VBox spacing="8" styleClass="panel-header">
+        <VBox spacing="4" styleClass="panel-header">
             <padding>
-                <Insets top="16" right="16" bottom="16" left="16"/>
+                <Insets top="8" right="8" bottom="8" left="8"/>
             </padding>
 
-            <HBox alignment="CENTER_LEFT" spacing="12">
+            <HBox alignment="CENTER_LEFT" spacing="8">
                 <Label fx:id="indexNameLabel" styleClass="panel-title"/>
                 <Label fx:id="recordCountLabel" styleClass="panel-subtitle"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button text="↻ Refresh" onAction="#handleRefresh" styleClass="btn-small"/>
-                <Button text="➕ Add Record" onAction="#handleAddRecord" styleClass="btn-primary"/>
+                <Button text="📂 Import" onAction="#handleImport" styleClass="btn-secondary"/>
+                <Button text="↻" onAction="#handleRefresh" styleClass="btn-small"/>
+                <Button text="➕ Add" onAction="#handleAddRecord" styleClass="btn-primary"/>
             </HBox>
+
             <TextField fx:id="searchField" promptText="🔍 Search by ID or metadata..."
                        onAction="#handleSearch" styleClass="search-field"/>
         </VBox>
@@ -31,12 +33,11 @@
     <!-- Таблица записей -->
     <center>
         <TableView fx:id="recordsTable" styleClass="data-table" VBox.vgrow="ALWAYS">
-            <!-- Убираем политику авторесайза, используем жесткие размеры из Java кода -->
             <columns>
                 <TableColumn text="ID" fx:id="colId"/>
                 <TableColumn text="Text Preview" fx:id="colText"/>
                 <TableColumn text="Metadata" fx:id="colMetadata"/>
-                <TableColumn text="Actions" fx:id="colActions"/>
+                <TableColumn text="Act" fx:id="colActions"/>
             </columns>
         </TableView>
     </center>
@@ -47,58 +48,62 @@
             <Separator styleClass="separator" />
 
             <!-- Панель-заглушка -->
-            <VBox fx:id="placeholderPanel" spacing="12" styleClass="detail-panel-placeholder" visible="true" managed="true">
+            <VBox fx:id="placeholderPanel" spacing="8" styleClass="detail-panel-placeholder" visible="true" managed="true" maxHeight="50">
                 <padding>
-                    <Insets top="16" right="16" bottom="16" left="16"/>
+                    <Insets top="8" right="16" bottom="8" left="16"/>
                 </padding>
                 <Label text="Select a record to view details" styleClass="placeholder-text" alignment="CENTER" maxWidth="Infinity"/>
             </VBox>
 
             <!-- Панель деталей -->
-            <!-- Добавляем alignment="CENTER" чтобы содержимое центрировалось -->
-            <VBox fx:id="detailPanel" spacing="12" styleClass="detail-panel" visible="false" managed="false" alignment="CENTER">
-                <padding>
-                    <Insets top="16" right="16" bottom="16" left="16"/>
-                </padding>
+            <VBox fx:id="detailPanel" styleClass="detail-panel" visible="false" managed="false" VBox.vgrow="NEVER">
+                <ScrollPane fitToWidth="true" fitToHeight="false" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="detail-scroll-pane">
+                    <VBox spacing="8">
+                        <padding>
+                            <Insets top="8" right="12" bottom="8" left="12"/>
+                        </padding>
 
-                <!-- Ограничиваем ширину содержимого, чтобы оно не растягивалось на весь экран -->
-                <VBox spacing="10" maxWidth="800" styleClass="detail-content-wrapper">
-                    <Label text="📋 Record Details" styleClass="detail-title"/>
-
-                    <GridPane hgap="12" vgap="8" alignment="CENTER">
-                        <!-- Центрируем контент в ячейках -->
-                        <Label text="ID:" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.halignment="RIGHT"/>
-                        <Label fx:id="detailId" styleClass="detail-value" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.halignment="LEFT"/>
-                        <Button text="📋 Copy" onAction="#copyId" styleClass="btn-tiny" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-
-                        <Label text="Text:" styleClass="detail-label" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.valignment="TOP" GridPane.halignment="RIGHT"/>
-                        <!-- Задаем предпочтительную ширину, чтобы блок был аккуратным -->
-                        <TextArea fx:id="detailText" editable="false" wrapText="true"
-                                  prefHeight="150" prefWidth="700" styleClass="detail-textarea"
-                                  GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.columnSpan="2"/>
-
-                        <Label text="Meta" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.valignment="TOP" GridPane.halignment="RIGHT"/>
-                        <TextArea fx:id="detailMetadata" editable="false" wrapText="true"
-                                  prefHeight="100" prefWidth="700" styleClass="detail-textarea"
-                                  GridPane.rowIndex="2" GridPane.columnIndex="1" GridPane.columnSpan="2"/>
-
-                        <Label text="Vector:" styleClass="detail-label" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.halignment="RIGHT"/>
-                        <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="3" GridPane.columnIndex="1" GridPane.columnSpan="2">
-                            <Label fx:id="vectorSummary" styleClass="detail-value"/>
-                            <Button fx:id="toggleVectorBtn" text="▼ Show" onAction="#toggleVector" styleClass="btn-tiny"/>
+                        <!-- Верхняя строка: ID и Кнопки действий -->
+                        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 4 0;">
+                            <Label text="ID:" styleClass="detail-label"/>
+                            <Label fx:id="detailId" styleClass="detail-value" HBox.hgrow="ALWAYS"/>
+                            <Button text="📋" onAction="#copyId" styleClass="btn-tiny"/>
+                            <Button text="✏️ Edit" onAction="#handleEditSelected" styleClass="btn-secondary-tiny"/>
+                            <Button text="🗑️ Delete" onAction="#handleDeleteSelected" styleClass="btn-danger-tiny"/>
+                            <Button text="✖ Close" onAction="#handleClose" styleClass="btn-small"/>
                         </HBox>
-                        <TextArea fx:id="detailVector" visible="false" editable="false" wrapText="false"
-                                  prefHeight="80" prefWidth="700" styleClass="detail-textarea mono-font"
-                                  GridPane.rowIndex="4" GridPane.columnIndex="1" GridPane.columnSpan="2"/>
-                    </GridPane>
 
-                    <!-- Кнопки выровнены по центру справа внутри ограниченного блока -->
-                    <HBox spacing="8" alignment="CENTER_RIGHT">
-                        <Button text="✏️ Edit" onAction="#handleEditSelected" styleClass="btn-secondary"/>
-                        <Button text="🗑️ Delete" onAction="#handleDeleteSelected" styleClass="btn-danger"/>
-                        <Button text="Close" onAction="#handleClose" styleClass="btn-small"/>
-                    </HBox>
-                </VBox>
+                        <!-- Основной текст (на всю ширину) -->
+                        <TextArea fx:id="detailText" editable="false" wrapText="true"
+                                  prefHeight="100" styleClass="detail-textarea"
+                                  VBox.vgrow="ALWAYS"/>
+
+                        <!-- Спойлер для Меты и Вектора (ИСПРАВЛЕНО: убран fx:define) -->
+                        <VBox spacing="4">
+                            <Button fx:id="toggleMetaVectorBtn" text="▼ Show details" onAction="#toggleMetaVector" styleClass="btn-spoiler"/>
+
+                            <!-- Контейнер для Меты и Вектора (скрыт по умолчанию) -->
+                            <HBox fx:id="metaVectorBox" spacing="10" visible="false" managed="false">
+                                <!-- Левая колонка: Мета -->
+                                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                    <Label text="Metadata" styleClass="detail-label-mini"/>
+                                    <TextArea fx:id="detailMetadata" editable="false" wrapText="true"
+                                              prefHeight="60" styleClass="detail-textarea compact-meta"
+                                              VBox.vgrow="ALWAYS"/>
+                                </VBox>
+
+                                <!-- Правая колонка: Вектор -->
+                                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="vectorSummary" styleClass="detail-label-mini"/>
+                                    <TextArea fx:id="detailVector" editable="false" wrapText="false"
+                                              prefHeight="60" styleClass="detail-textarea compact-meta mono-font"
+                                              VBox.vgrow="ALWAYS"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+
+                    </VBox>
+                </ScrollPane>
             </VBox>
         </VBox>
     </bottom>

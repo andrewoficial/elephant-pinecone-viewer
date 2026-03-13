@@ -130,7 +130,7 @@
     -fx-border-width: 0 0 1 0;
 }
 .table-row-cell:selected { -fx-background-color: #313244; }
-.table-cell { -fx-text-fill: #cdd6f4; }
+
 
 .empty-label {
     -fx-text-fill: #6c7086;
@@ -139,11 +139,7 @@
 }
 
 /* Панель записей (заголовок) */
-.panel-header {
-    -fx-background-color: #181825;
-    -fx-border-color: #313244;
-    -fx-border-width: 0 0 1 0;
-}
+
 .search-field {
     -fx-background-color: #313244;
     -fx-text-fill: #cdd6f4;
@@ -153,16 +149,6 @@
 }
 
 /* Панель деталей записи — выделена тёмным фоном, скруглением и тенью */
-.detail-panel {
-    -fx-background-color: #0f0f17;          /* более тёмный фон для контраста */
-    -fx-background-radius: 8;                /* скруглённые углы */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 12, 0, 0, 2); /* тень */
-    -fx-border-color: #313244;               /* тонкая рамка */
-    -fx-border-width: 1;
-    -fx-border-radius: 8;
-    -fx-padding: 16;                         /* отступы со всех сторон */
-    -fx-alignment: top-center;                /* выравнивание содержимого по центру по горизонтали */
-}
 .detail-title {
     -fx-text-fill: #cba6f7;
     -fx-font-size: 14px;
@@ -281,3 +267,89 @@
     -fx-font-size: 13px;
     -fx-padding: 10 0 5 0;
 }
+
+
+/* Компактный стиль для Meta и Vector в предпросмотре */
+.compact-meta {
+    -fx-pref-height: 25px;      /* Около одной строки */
+    -fx-max-height: 40px;       /* Можно чуть растянуть если нужно */
+    -fx-font-size: 11px;
+    -fx-padding: 2px;
+}
+
+/* Убираем рамки у ScrollPane в предпросмотре */
+.detail-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.detail-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Фикс для таблицы, чтобы строки не прыгали */
+.table-cell {
+    -fx-cell-size: 15; /* Минимальная высота ячейки */
+    -fx-padding: 4 2 4 2;
+    -fx-text-fill: #cdd6f4;
+}
+
+/* Адаптивность заголовка */
+.panel-header {
+    -fx-background-color: #181825;
+    -fx-border-color: #313244;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 4 8 4 8; /* Уменьшен padding */
+}
+
+/* Компактные кнопки действий в предпросмотре */
+.btn-secondary-tiny {
+    -fx-background-color: #313244;
+    -fx-text-fill: #cdd6f4;
+    -fx-background-radius: 4;
+    -fx-padding: 2 8;
+    -fx-font-size: 10px;
+    -fx-cursor: hand;
+}
+
+.btn-danger-tiny {
+    -fx-background-color: transparent;
+    -fx-text-fill: #f38ba8;
+    -fx-background-radius: 4;
+    -fx-padding: 2 8;
+    -fx-font-size: 10px;
+    -fx-cursor: hand;
+}
+.btn-danger-tiny:hover {
+    -fx-background-color: rgba(243, 139, 168, 0.1);
+}
+
+/* Кнопка спойлера */
+.btn-spoiler {
+    -fx-background-color: transparent;
+    -fx-text-fill: #89b4fa;
+    -fx-font-size: 11px;
+    -fx-padding: 2 0;
+    -fx-cursor: hand;
+    -fx-border-color: #313244;
+    -fx-border-width: 1 0 0 0;
+}
+
+.detail-label-mini {
+    -fx-text-fill: #6c7086;
+    -fx-font-size: 10px;
+    -fx-font-weight: 600;
+}
+
+/* Фон предпросмотра */
+.detail-panel {
+    -fx-background-color: #0f0f17;
+    -fx-border-color: #313244;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 0;
+}
+
+
+
+
+

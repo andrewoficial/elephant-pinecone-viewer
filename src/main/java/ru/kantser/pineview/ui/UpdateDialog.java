@@ -9,13 +9,8 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kantser.pineview.adapter.download.HttpDownloadAdapter;
-import ru.kantser.pineview.adapter.release.GitHubReleaseAdapter;
-import ru.kantser.pineview.adapter.version.MavenVersionAdapter;
 import ru.kantser.pineview.domain.model.ReleaseInfo;
 import ru.kantser.pineview.domain.port.DownloadPort;
-import ru.kantser.pineview.domain.port.ReleaseInfoPort;
-import ru.kantser.pineview.domain.port.VersionPort;
 import ru.kantser.pineview.domain.usecase.CheckForUpdatesUseCase;
 
 import java.io.IOException;
@@ -31,27 +26,23 @@ public class UpdateDialog extends Dialog<Void> {
     @FXML private Label downloadStatusLabel;
     @FXML private Label statusLabel;
 
-    private boolean updateAvailable = false;
     private final CheckForUpdatesUseCase updatesUseCase;
 
-    public UpdateDialog(Window owner) {
-        VersionPort versionPort = new MavenVersionAdapter();
-        ReleaseInfoPort releasePort = new GitHubReleaseAdapter();
-        DownloadPort downloadPort = new HttpDownloadAdapter(); // если создали
-        this.updatesUseCase = new CheckForUpdatesUseCase(versionPort, releasePort, downloadPort);
+    // === Внедрение зависимости через конструктор ===
+    public UpdateDialog(Window owner, CheckForUpdatesUseCase updatesUseCase) {
+        this.updatesUseCase = updatesUseCase; // Принимаем, не создаем
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ru/kantser/pineview/update-dialog.fxml"));
             loader.setController(this);
             DialogPane pane = loader.load();
+
             setDialogPane(pane);
             initOwner(owner);
             initModality(Modality.WINDOW_MODAL);
             setTitle("Обновление программы");
             setResizable(true);
 
-            // Убираем стандартные кнопки, так как используем свои
-            // Но можно добавить кнопку "Закрыть"
             ButtonType closeButtonType = new ButtonType("Закрыть", ButtonBar.ButtonData.CANCEL_CLOSE);
             getDialogPane().getButtonTypes().add(closeButtonType);
 
@@ -63,19 +54,19 @@ public class UpdateDialog extends Dialog<Void> {
         }
     }
 
-    public static void showDialog(Window owner) {
-        UpdateDialog dialog = new UpdateDialog(owner);
-        dialog.showAndWait();
-    }
 
     @FXML
     private void handleCheck() {
         checkButton.setDisable(true);
-        // асинхронный вызов
-        new Thread(() -> {
-            try {
+        checkResultArea.setText("Проверка...");
+
+        // Используем Task для асинхронности
+        Task<Void> checkTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
                 boolean available = updatesUseCase.isUpdateAvailable();
                 ReleaseInfo release = updatesUseCase.getLatestRelease();
+
                 Platform.runLater(() -> {
                     if (available) {
                         checkResultArea.setText("Доступна версия: " + release.getVersion());
@@ -84,12 +75,21 @@ public class UpdateDialog extends Dialog<Void> {
                     } else {
                         checkResultArea.setText("У вас актуальная версия.");
                     }
+                    checkButton.setDisable(false);
                 });
-            } catch (Exception e) {
-                log.error("Check failed", e);
-                Platform.runLater(() -> checkResultArea.setText("Ошибка: " + e.getMessage()));
+                return null;
             }
-        }).start();
+        };
+
+        checkTask.setOnFailed(e -> {
+            log.error("Check failed", checkTask.getException());
+            Platform.runLater(() -> {
+                checkResultArea.setText("Ошибка: " + checkTask.getException().getMessage());
+                checkButton.setDisable(false);
+            });
+        });
+
+        new Thread(checkTask).start();
     }
 
     @FXML
@@ -102,7 +102,6 @@ public class UpdateDialog extends Dialog<Void> {
         Task<Void> downloadTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                // Вызов usecase с callback'ом прогресса
                 updatesUseCase.downloadUpdate(new DownloadPort.ProgressCallback() {
                     @Override
                     public void onProgress(long bytesRead, long totalBytes) {
@@ -118,8 +117,6 @@ public class UpdateDialog extends Dialog<Void> {
 
                 Platform.runLater(() -> {
                     downloadStatusLabel.setText("Загрузка завершена! Файл сохранён.");
-                    // Можно добавить диалог с предложением перезапустить приложение
-                    // Например: showRestartDialog();
                 });
                 return null;
             }

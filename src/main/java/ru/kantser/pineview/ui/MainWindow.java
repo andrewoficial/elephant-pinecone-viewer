@@ -12,9 +12,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
-import ru.kantser.pineview.adapter.http.OkHttpHealthChecker;
-import ru.kantser.pineview.adapter.persistence.JsonConfigAdapter;
-import ru.kantser.pineview.adapter.pinecone.PineconeApiAdapter;
+import ru.kantser.pineview.AppContext;
 import ru.kantser.pineview.domain.model.HealthReport;
 import ru.kantser.pineview.domain.model.IndexDisplay;
 import ru.kantser.pineview.domain.model.ServiceStatus;
@@ -45,20 +43,21 @@ public class MainWindow {
     @FXML private Label emptyStateLabel;
     @FXML private Button refreshIndexesBtn;
 
-    private final JsonConfigAdapter configAdapter = new JsonConfigAdapter();
-    private final OkHttpHealthChecker httpChecker = new OkHttpHealthChecker();
-    private final PineconeApiAdapter pineconeAdapter = new PineconeApiAdapter();
+    private final AppContext ctx;
+    private HealthMonitorService monitorService;
     private ScheduledExecutorService countdownScheduler;
     private volatile int secondsUntilNextCheck = 30;
 
-    private HealthMonitorService monitorService;
+    public MainWindow(AppContext ctx) {
+        this.ctx = ctx;
+    }
 
     @FXML
     public void initialize() {
         log.info("[MainWindow] [initialize] - Initializing main window");
 
         // Загружаем сохранённый ключ
-        configAdapter.load("apiKey").ifPresent(apiKeyField::setText);
+        ctx.configPort().load("apiKey").ifPresent(apiKeyField::setText);
 
         // Создаём индикаторы статусов
         StatusIndicator yaIndicator = new StatusIndicator("ya.ru");
@@ -84,7 +83,6 @@ public class MainWindow {
         // Запускаем мониторинг
         if (monitorService != null) monitorService.start();
         startCountdown();
-
         setupIndexTable();
     }
 
@@ -147,7 +145,7 @@ public class MainWindow {
             Parent root = loader.load();
 
             IndexRecordsWindow controller = loader.getController();
-            controller.init(pineconeAdapter, indexName, configAdapter.load("apiKey").orElse(""));
+            controller.init(ctx.pineconeAdapter(), indexName, ctx.configPort().load("apiKey").orElse(""));
 
             Stage stage = new Stage();
             stage.setTitle("📦 Records: " + indexName);
@@ -173,11 +171,11 @@ public class MainWindow {
     private void loadIndexes() {
         log.info("[MainWindow] [loadIndexes] - Loading indexes");
 
-        if (pineconeAdapter == null) {
+        if (ctx.pineconeAdapter() == null) {
             log.error("[MainWindow] [loadIndexes] - pineconeAdapter is null!");
             return;
         }
-
+        var pineconeAdapter = ctx.pineconeAdapter();
         // Показываем пользователю, что идёт загрузка
         emptyStateLabel.setText("Loading indexes...");
         emptyStateLabel.setVisible(true);
@@ -247,9 +245,9 @@ public class MainWindow {
         // Создаём "составной" адаптер: для Pinecone API используем спец. адаптер, для остальных — HTTP
         HealthCheckPort compositeChecker = (name, url) -> {
             if ("Pinecone API".equals(name)) {
-                return pineconeAdapter.checkHealth(name, url);
+                return ctx.pineconeAdapter().checkHealth(name, url);
             }
-            return httpChecker.checkHealth(name, url);
+            return ctx.httpHealthChecker().checkHealth(name, url);
         };
 
         monitorService = new HealthMonitorService(compositeChecker, services, callback, 30);
@@ -266,8 +264,8 @@ public class MainWindow {
             return;
         }
 
-        configAdapter.save("apiKey", key);
-        pineconeAdapter.setApiKey(key);
+        ctx.configPort().save("apiKey", key);
+        ctx.pineconeAdapter().setApiKey(key);
 
         // Визуально показываем процесс
         apiStatusLabel.setText("Checking API...");
@@ -276,7 +274,7 @@ public class MainWindow {
 
         log.info("[MainWindow] [handleConnect] - Testing connection...");
         // 👇 Асинхронно проверяем подключение и ЗАТЕМ загружаем индексы
-        pineconeAdapter.checkHealth("Pinecone API", "https://api.pinecone.io")
+        ctx.pineconeAdapter().checkHealth("Pinecone API", "https://api.pinecone.io")
                 .thenAccept(report -> {
                     javafx.application.Platform.runLater(() -> {
                         connectBtn.setDisable(false);
@@ -383,12 +381,6 @@ public class MainWindow {
         if (monitorService != null) {
             monitorService.stop();
         }
-
-        javafx.stage.Window.getWindows().forEach(window -> {
-            if (window instanceof javafx.stage.Stage stage) {
-                stage.close();
-            }
-        });
     }
 
     @FXML
@@ -400,7 +392,8 @@ public class MainWindow {
     @FXML
     private void handleCheckUpdates() {
         log.info("Check for updates requested");
-        UpdateDialog.showDialog(apiStatusLabel.getScene().getWindow());
+        UpdateDialog dialog = new UpdateDialog(apiStatusLabel.getScene().getWindow(), ctx.checkForUpdatesUseCase());
+        dialog.showAndWait();
     }
 
     @FXML
