@@ -43,7 +43,7 @@ public class CheckForUpdatesUseCase {
             throw new IllegalStateException("No release info or download URL");
         }
         // Если используем порт скачивания
-        downloadPort.download(latestRelease.getDownloadUrl(), "PineView-update.jar", callback);
+        downloadPort.download(latestRelease.getDownloadUrl(), "Elephant-Pinecone-Viewer-"+latestRelease.getVersion()+".jar", callback);
         
         // Или можно оставить прямую реализацию здесь, но тогда usecase будет зависеть от OkHttp.
         // Лучше вынести в адаптер.
