@@ -22,6 +22,10 @@ public class JsonConfigAdapter implements ConfigPort {
         this.file = new File(CONFIG_FILE);
     }
 
+    public JsonConfigAdapter(File file) {
+        this.file = file;
+        log.info("[JsonConfigAdapter] Initialized with file: {}", file.getAbsolutePath());
+    }
     @Override
     public void save(String key, String value) {
         log.debug("[JsonConfigAdapter] [save] - Saving config: {} = {}", key, value);

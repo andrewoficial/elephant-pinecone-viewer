@@ -54,7 +54,7 @@ public class IndexDisplay {
         this.vectorCount.set(-1);
 
         // Spec / Environment
-        var spec = model.getSpec();
+        org.openapitools.db_control.client.model.IndexModelSpec spec = model.getSpec();
         this.environment.set(spec != null ? formatSpec(spec) : "serverless");
 
         log.debug("IndexDisplay created: name={}, dim={}, metric={}, status={}",

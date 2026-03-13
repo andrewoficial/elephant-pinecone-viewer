@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            stylesheets="@styles.css"
+            styleClass="dialog-pane"
+            prefWidth="600" prefHeight="500">
+
+    <content>
+        <VBox spacing="15" styleClass="content-box">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+            <Label text="Проверка обновлений" styleClass="update-title"/>
+
+            <!-- Кнопка проверки и результат -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button fx:id="checkButton" text="Проверить" onAction="#handleCheck" styleClass="btn-primary"/>
+                <TextArea fx:id="checkResultArea" editable="false" prefRowCount="2" HBox.hgrow="ALWAYS" styleClass="detail-textarea"/>
+            </HBox>
+
+            <!-- What's new -->
+            <Label text="Что нового:" styleClass="update-section-label"/>
+            <TextArea fx:id="whatsNewArea" editable="false" prefRowCount="8" VBox.vgrow="ALWAYS" styleClass="detail-textarea"/>
+
+            <!-- Прогресс загрузки -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button fx:id="downloadButton" text="Скачать" onAction="#handleDownload" disable="true" styleClass="btn-secondary"/>
+                <ProgressBar fx:id="progressBar" prefWidth="300" progress="0"/>
+                <Label fx:id="downloadStatusLabel" text="" styleClass="label"/>
+            </HBox>
+
+            <!-- Поле статуса -->
+            <Label fx:id="statusLabel" styleClass="status-footer"/>
+        </VBox>
+    </content>
+</DialogPane>

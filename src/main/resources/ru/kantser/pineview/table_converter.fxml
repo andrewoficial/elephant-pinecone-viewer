@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ru.kantser.pineview.ui.TableConverterController"
+      stylesheets="@styles.css"
+      styleClass="content-box"
+      spacing="16" prefWidth="800" prefHeight="500">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="📋 Конвертер таблиц Word → Markdown" styleClass="header-title"/>
+
+    <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.5">
+        <!-- Левая часть: Ввод из Word -->
+        <VBox spacing="8">
+            <Label text="Вставьте таблицу из Word (Ctrl+V):" styleClass="label"/>
+            <TextArea fx:id="inputArea" wrapText="true" promptText="Текст из Word...">
+                <VBox.vgrow>ALWAYS</VBox.vgrow>
+            </TextArea>
+        </VBox>
+
+        <!-- Правая часть: Результат Markdown -->
+        <!-- Правая часть: Результат Markdown -->
+        <VBox spacing="8">
+            <Label text="Результат (Markdown):" styleClass="label"/>
+            <TextArea fx:id="outputArea" wrapText="true" editable="false" styleClass="detail-textarea">
+                <VBox.vgrow>ALWAYS</VBox.vgrow>
+            </TextArea>
+        </VBox>
+    </SplitPane>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+        <Button text="🔄 Конвертировать" onAction="#handleConvert" styleClass="btn-primary" defaultButton="true"/>
+        <Button text="📋 Копировать результат" onAction="#handleCopy" styleClass="btn-secondary"/>
+        <Button text="Очистить" onAction="#handleClear" styleClass="btn-small"/>
+    </HBox>
+
+</VBox>

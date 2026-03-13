@@ -1,0 +1,36 @@
+module ru.kantser.pineview {
+    requires javafx.controls; //Не видит
+    requires javafx.fxml;//Не видит
+
+    // Pinecone client 6.1.0 (автоматический модуль)
+    requires pinecone.client;//Не видит
+
+    // Зависимости клиента
+    requires com.fasterxml.jackson.databind;//Не видит
+    requires okhttp3;//Не видит
+    requires org.slf4j;//Не видит
+    requires com.google.protobuf;//Не видит
+    requires io.grpc.protobuf;//Не видит
+    requires io.grpc.stub;//Не видит
+    requires io.grpc.netty;//Не видит
+    requires com.google.common;//Не видит
+    requires java.sql;//Видит
+
+    // Для рефлексии в адаптере
+    requires java.net.http;
+
+    // Открываем пакеты для FXML и рефлексии
+    opens ru.kantser.pineview to javafx.fxml, com.fasterxml.jackson.databind;
+    opens ru.kantser.pineview.ui to javafx.fxml;
+    opens ru.kantser.pineview.adapter.pinecone to javafx.fxml, pinecone.client;
+
+    // Экспортируем пакеты
+    exports ru.kantser.pineview;
+    exports ru.kantser.pineview.domain.model;
+    exports ru.kantser.pineview.domain.port;
+    exports ru.kantser.pineview.domain.usecase;
+    exports ru.kantser.pineview.adapter.pinecone;
+    exports ru.kantser.pineview.adapter.http;
+    exports ru.kantser.pineview.adapter.persistence;
+    exports ru.kantser.pineview.ui;
+}

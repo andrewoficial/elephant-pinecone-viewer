@@ -1,15 +1,16 @@
 <configuration>
-    <!-- Перенаправляем в System.out, чтобы не было красного фона в IDEA -->
+    <!-- Write logs to System.out to avoid red background in IDEA -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
         <encoder>
             <!--
-                %d{HH:mm:ss.SSS}       – время
-                %highlight(%-5level)    – уровень с ANSI-цветом (ERROR красный, WARN жёлтый, INFO синий/серый)
-                %cyan(%logger{0})       – имя логгера (тег) голубым цветом, без пакетов
-                %msg%n                  – сообщение и перевод строки
+                %d{HH:mm:ss.SSS}          – time with milliseconds
+                %highlight(%-5level)       – log level (INFO, WARN, etc.) with ANSI colors, left-padded to 5 chars
+                %cyan(%-30.30logger{0})    – simple class name (without package) in cyan,
+                                              fixed width 30 chars, left-aligned, truncated if longer
+                - %msg%n                    – separator, message, and newline
             -->
-            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{0}) - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%-30.30logger{0}) - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -17,7 +18,7 @@
         <appender-ref ref="CONSOLE"/>
     </root>
 
-    <!-- Для библиотек можно установить уровень WARN, чтобы не засорять консоль -->
+    <!-- Suppress verbose logs from third-party libraries -->
     <logger name="io.grpc" level="WARN"/>
     <logger name="io.netty" level="WARN"/>
 </configuration>

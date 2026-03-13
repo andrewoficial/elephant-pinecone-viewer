@@ -7,10 +7,13 @@ import org.openapitools.db_control.client.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.model.HealthReport;
+import ru.kantser.pineview.domain.model.RecordData;
 import ru.kantser.pineview.domain.model.ServiceStatus;
 import ru.kantser.pineview.domain.port.HealthCheckPort;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class PineconeApiAdapter implements HealthCheckPort {
@@ -18,6 +21,14 @@ public class PineconeApiAdapter implements HealthCheckPort {
 
     private Pinecone pinecone;
     private String currentApiKey;
+
+    /**
+     * Только для тестов: позволяет внедрить мок клиента
+     */
+    void setPineconeClient(Pinecone pinecone) {
+        this.pinecone = pinecone;
+        this.currentApiKey = "TEST_KEY"; // Имитируем, что ключ установлен
+    }
 
     public void setApiKey(String apiKey) {
         log.info("[PineconeApiAdapter] [setApiKey] - Setting API key");
@@ -110,6 +121,233 @@ public class PineconeApiAdapter implements HealthCheckPort {
             } catch (Exception e) {
                 log.error("[PineconeApiAdapter] [fetchIndexes] - Error fetching indexes: {}", e.getMessage(), e);
                 return List.of();
+            }
+        });
+    }
+
+
+
+    /**
+     * Получить все записи из индекса
+     * ⚠️ Внимание: для больших индексов (>10000) нужна пагинация!
+     */
+    public CompletableFuture<List<RecordData>> fetchAllRecords(String indexName) {
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Fetching all records from index: {}", indexName);
+
+            try {
+                if (pinecone == null) {
+                    throw new IllegalStateException("Pinecone client not initialized");
+                }
+
+                Index index = pinecone.getIndexConnection(indexName);
+
+                // 👇 Получаем размерность индекса
+                int dimension = index.describeIndexStats().getDimension();
+                float[] zeroVector = new float[dimension];
+
+                //Изменил конвертацию
+                List<Float> vectorList = new ArrayList<>();
+                for (float v : zeroVector) {
+                    vectorList.add(v);
+                }
+/*
+                // 👇 Конвертируем float[] → List<Float> для параметра вектора
+                List<Float> vectorList = java.util.Arrays.stream(zeroVector)
+                        .boxed()
+                        .collect(java.util.stream.Collectors.toList());
+*/
+
+                // 👇 Вызов query() с 9 параметрами (порядок из вашей подсказки IDE):
+                // query(topK, vector, sparseIndices, sparseValues, id, namespace, filter, includeValues, includeMetadata)
+                var response = index.query(
+                        10000,                          // int topK
+                        vectorList,                     // List<Float> vector
+                        null,                           // List<Long> sparseIndices
+                        null,                           // List<Float> sparseValues
+                        null,                           // String id
+                        "",                             // String namespace (пустой = дефолтный)
+                        null,                           // com.google.protobuf.Struct filter
+                        true,                           // boolean includeValues
+                        true                            // boolean includeMetadata
+                );
+
+                var records = new ArrayList<RecordData>();
+
+                // 👇 В прото-стиле: getMatchesCount() + getMatches(int index)
+                var matchesList = response.getMatchesList();
+                log.debug("Query returned {} matches", matchesList.size());
+
+                for (var match : matchesList) {
+                    // 👇 ID: просто получаем, в прото-объектах это всегда строка (может быть пустой)
+                    String id = match.getId();
+                    if (id == null || id.isEmpty()) {
+                        log.warn("Found record with empty ID, skipping");
+                        continue;
+                    }
+
+                    // 👇 Вектор: getValuesList() возвращает List<Float>
+                    List<Float> valuesList = match.getValuesList();
+                    float[] vector = new float[valuesList != null ? valuesList.size() : 0];
+                    if (valuesList != null) {
+                        for (int j = 0; j < vector.length; j++) {
+                            vector[j] = valuesList.get(j);
+                        }
+                    }
+
+                    // 👇 Метаданные: конвертируем protobuf Struct → Map
+                    Map<String, Object> metadata = structToMap(match.getMetadata());
+
+                    records.add(new RecordData(id, vector, metadata));
+                }
+
+                log.info("Fetched {} records from {}", records.size(), indexName);
+                return records;
+
+            } catch (Exception e) {
+                log.error("Failed to fetch records from {}", indexName, e);
+                throw new RuntimeException("Fetch failed: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Вспомогательный метод: конвертирует protobuf Struct в Java Map
+     */
+    private Map<String, Object> structToMap(com.google.protobuf.Struct struct) {
+        if (struct == null) return java.util.Collections.emptyMap();
+
+        Map<String, Object> result = new java.util.HashMap<>();
+        for (var entry : struct.getFieldsMap().entrySet()) {
+            var value = entry.getValue();
+            // Простая конвертация: для продакшена добавьте обработку всех типов Value
+            if (value.hasStringValue()) {
+                result.put(entry.getKey(), value.getStringValue());
+            } else if (value.hasNumberValue()) {
+                result.put(entry.getKey(), value.getNumberValue());
+            } else if (value.hasBoolValue()) {
+                result.put(entry.getKey(), value.getBoolValue());
+            } else if (value.hasStructValue()) {
+                result.put(entry.getKey(), structToMap(value.getStructValue()));
+            } else if (value.hasListValue()) {
+                result.put(entry.getKey(), value.getListValue().getValuesList());
+            } else {
+                result.put(entry.getKey(), value.toString());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Добавить или обновить запись (upsert) — для одного вектора
+     */
+    public CompletableFuture<Void> upsertRecord(String indexName, String id, float[] vector, Map<String, Object> metadata) {
+        return CompletableFuture.runAsync(() -> {
+            log.info("Upserting record {} to index {}", id, indexName);
+
+            try {
+                Index index = pinecone.getIndexConnection(indexName);
+
+                // 👇 Конвертируем float[] → List<Float>
+                List<Float> vectorList = new ArrayList<>();
+                for (float v : vector) {
+                    vectorList.add(v);
+                }
+
+                // 👇 Конвертируем Map → protobuf Struct для метаданных
+                com.google.protobuf.Struct structMetadata = mapToStruct(
+                        metadata != null ? metadata : java.util.Collections.emptyMap()
+                );
+
+                // 👇 Вызов upsert() для ОДНОГО вектора:
+                // (id, vector, sparseIndices, sparseValues, metadata, namespace)
+                index.upsert(
+                        id,                          // String id
+                        vectorList,                  // List<Float> vector
+                        null,                        // List<Long> sparseIndices (не используем)
+                        null,                        // List<Float> sparseValues (не используем)
+                        structMetadata,              // Struct metadata
+                        ""                           // String namespace (пустой = дефолтный)
+                );
+
+                log.info("Upsert successful: {}", id);
+
+            } catch (Exception e) {
+                log.error("Upsert failed for {}", id, e);
+                throw new RuntimeException("Upsert failed: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Вспомогательный метод: конвертирует Java Map в protobuf Struct
+     */
+    private com.google.protobuf.Struct mapToStruct(Map<String, Object> map) {
+        com.google.protobuf.Struct.Builder builder = com.google.protobuf.Struct.newBuilder();
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            com.google.protobuf.Value.Builder valueBuilder = com.google.protobuf.Value.newBuilder();
+
+            if (value == null) {
+                valueBuilder.setNullValue(com.google.protobuf.NullValue.NULL_VALUE);
+            } else if (value instanceof String) {
+                valueBuilder.setStringValue((String) value);
+            } else if (value instanceof Number) {
+                valueBuilder.setNumberValue(((Number) value).doubleValue());
+            } else if (value instanceof Boolean) {
+                valueBuilder.setBoolValue((Boolean) value);
+            } else if (value instanceof Map) {
+                valueBuilder.setStructValue(mapToStruct((Map<String, Object>) value));
+            } else if (value instanceof List) {
+                valueBuilder.setListValue(com.google.protobuf.ListValue.newBuilder()
+                        .addAllValues(((List<?>) value).stream()
+                                .map(item -> {
+                                    var vb = com.google.protobuf.Value.newBuilder();
+                                    if (item == null) vb.setNullValue(com.google.protobuf.NullValue.NULL_VALUE);
+                                    else if (item instanceof String) vb.setStringValue((String) item);
+                                    else if (item instanceof Number) vb.setNumberValue(((Number) item).doubleValue());
+                                    else if (item instanceof Boolean) vb.setBoolValue((Boolean) item);
+                                    else vb.setStringValue(item.toString());
+                                    return vb.build();
+                                })
+                                .collect(java.util.stream.Collectors.toList()))
+                        .build());
+            } else {
+                // Fallback: всё остальное как строка
+                valueBuilder.setStringValue(value.toString());
+            }
+
+            builder.putFields(key, valueBuilder.build());
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Удалить запись по ID
+     */
+    public CompletableFuture<Void> deleteRecord(String indexName, String id) {
+        return CompletableFuture.runAsync(() -> {
+            log.info("Deleting record {} from index {}", id, indexName);
+
+            try {
+                var index = pinecone.getIndexConnection(indexName);
+                /*
+                public io.pinecone.proto.DeleteResponse delete(
+                    java.util.List<String> ids,
+                    boolean deleteAll,
+                    String namespace,
+                    com.google.protobuf.Struct filter
+                )
+                 */
+                index.delete(List.of(id), false, "__default__", null);
+                log.info("Delete successful: {}", id);
+            } catch (Exception e) {
+                log.error("Delete failed for {}", id, e);
+                throw new RuntimeException("Delete failed: " + e.getMessage(), e);
             }
         });
     }

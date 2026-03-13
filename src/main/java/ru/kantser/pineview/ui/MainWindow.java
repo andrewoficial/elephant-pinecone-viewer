@@ -1,5 +1,10 @@
 package ru.kantser.pineview.ui;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javafx.application.Platform;
@@ -109,6 +114,54 @@ public class MainWindow {
                 }
             }
         });
+
+        indexTable.setRowFactory(tv -> {
+            TableRow<IndexDisplay> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    IndexDisplay selected = row.getItem();
+                    log.info("Double-clicked index: {}", selected.getName());
+                    openIndexRecordsWindow(selected.getName());
+                }
+            });
+            return row;
+        });
+    }
+
+    private void openIndexRecordsWindow(String indexName) {
+        try {
+            log.info("Opening records window for index: {}", indexName);
+
+            // 👇 Проверяем, что ресурс существует
+            var fxmlUrl = getClass().getResource("/ru/kantser/pineview/index-records-view.fxml");
+            if (fxmlUrl == null) {
+                log.error("FXML file not found: index-records-view.fxml");
+                log.error("Searched in: {}", getClass().getProtectionDomain().getCodeSource().getLocation());
+                showAlert("Error", "UI file not found. Please rebuild project.");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/ru/kantser/pineview/index-records-view.fxml")
+            );
+            Parent root = loader.load();
+
+            IndexRecordsWindow controller = loader.getController();
+            controller.init(pineconeAdapter, indexName, configAdapter.load("apiKey").orElse(""));
+
+            Stage stage = new Stage();
+            stage.setTitle("📦 Records: " + indexName);
+            stage.setScene(new Scene(root, 1100, 700));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(apiStatusLabel.getScene().getWindow());
+            stage.show();
+
+            log.info("Opened records window for index: {}", indexName);
+
+        } catch (Exception e) {
+            log.error("Failed to open records window", e);
+            showAlert("Error", "Could not open records: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -336,5 +389,47 @@ public class MainWindow {
                 stage.close();
             }
         });
+    }
+
+    @FXML
+    private void handleExit() {
+        log.info("Exit requested from menu");
+        Platform.exit();
+    }
+
+    @FXML
+    private void handleCheckUpdates() {
+        log.info("Check for updates requested");
+        UpdateDialog.showDialog(apiStatusLabel.getScene().getWindow());
+    }
+
+    @FXML
+    private void handleOpenTableConverter() {
+        try {
+            // ИСПРАВЛЕНО: Используем абсолютный путь от корня resources.
+            // Убедитесь, что пакет указан верно (ru/kantser/pineview/ui/)
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ru/kantser/pineview/table_converter.fxml"));
+
+            // Проверка на случай, если файл все еще не найден
+            if (loader.getLocation() == null) {
+                throw new IllegalStateException("FXML file not found!");
+            }
+
+            VBox root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Table Converter");
+            stage.setScene(new Scene(root));
+
+            if (apiStatusLabel != null && apiStatusLabel.getScene() != null) {
+                stage.initOwner(apiStatusLabel.getScene().getWindow());
+            }
+
+            stage.show();
+
+        } catch (Exception e) {
+            log.error("Failed to open Table Converter", e);
+            showAlert("Error", "Could not open converter: " + e.getMessage());
+        }
     }
 }

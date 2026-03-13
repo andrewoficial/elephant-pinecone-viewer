@@ -69,6 +69,18 @@ public class OkHttpHealthChecker implements HealthCheckPort {
                         responseTime,
                         e.getMessage()
                 );
+            }catch (Exception e) {
+                long responseTime = System.currentTimeMillis() - start;
+                log.error("[OkHttpHealthChecker] [checkHealth] - Unexpected error for {}: {}",
+                        serviceName, e.getMessage(), e);
+
+                return new HealthReport(
+                        serviceName,
+                        url,
+                        ServiceStatus.OFFLINE,
+                        responseTime,
+                        "Internal error: " + e.getMessage()
+                );
             }
         });
     }

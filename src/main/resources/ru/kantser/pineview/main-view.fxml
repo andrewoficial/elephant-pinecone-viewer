@@ -7,7 +7,24 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ru.kantser.pineview.ui.MainWindow"
             stylesheets="@styles.css">
-
+    <top>
+        <MenuBar>
+            <menus>
+                <Menu text="Файл">
+                    <items>
+                        <MenuItem text="Конвертер таблиц..." onAction="#handleOpenTableConverter"/>
+                        <SeparatorMenuItem /> <!-- Разделитель -->
+                        <MenuItem text="Выход" onAction="#handleExit"/>
+                    </items>
+                </Menu>
+                <Menu text="Справка">
+                    <items>
+                        <MenuItem text="Проверить обновления" onAction="#handleCheckUpdates"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </top>
     <left>
         <VBox prefWidth="260" spacing="12" styleClass="sidebar">
             <padding>
