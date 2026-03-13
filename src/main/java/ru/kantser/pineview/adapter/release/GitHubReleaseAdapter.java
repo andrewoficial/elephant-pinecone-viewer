@@ -7,36 +7,61 @@ import okhttp3.Request;
 import okhttp3.Response;
 import ru.kantser.pineview.domain.model.ReleaseInfo;
 import ru.kantser.pineview.domain.port.ReleaseInfoPort;
+
 import java.io.IOException;
 
 public class GitHubReleaseAdapter implements ReleaseInfoPort {
-    private static final String REPO_API = "https://api.github.com/repos/ваш-username/PineView/releases/latest";
+
+    // Ваш репозиторий
+    private static final String REPO_API = "https://api.github.com/repos/andrewoficial/elephant-pinecone-viewer/releases/latest";
+
     private final OkHttpClient client = new OkHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public ReleaseInfo fetchLatestRelease() throws IOException {
-        Request request = new Request.Builder().url(REPO_API).build();
+        Request request = new Request.Builder()
+                .url(REPO_API)
+                .header("Accept", "application/vnd.github.v3+json") // Хороший тон для GitHub API
+                .build();
+
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("GitHub API error: " + response.code());
             }
-            JsonNode root = mapper.readTree(response.body().string());
-            String version = root.get("tag_name").asText();
-            String notes = root.get("body").asText();
+
+            String responseBody = response.body() != null ? response.body().string() : "{}";
+            JsonNode root = mapper.readTree(responseBody);
+
+            // GitHub теги обычно с префиксом 'v' (v1.0.0), мы его отрезаем для сравнения версий
+            String tag = root.path("tag_name").asText();
+            String version = tag.startsWith("v") ? tag.substring(1) : tag;
+
+            String notes = root.path("body").asText();
             String downloadUrl = extractDownloadUrl(root);
+
             return new ReleaseInfo(version, notes, downloadUrl);
         }
     }
 
     private String extractDownloadUrl(JsonNode root) {
-        JsonNode assets = root.get("assets");
+        JsonNode assets = root.path("assets"); // Используем path для безопасности от NPE
+
+        if (assets.isMissingNode() || !assets.isArray()) {
+            return null;
+        }
+
         for (JsonNode asset : assets) {
-            String name = asset.get("name").asText();
-            if (name.endsWith(".jar")) {
-                return asset.get("browser_download_url").asText();
+            String name = asset.path("name").asText();
+
+            // Ищем наш "толстый" JAR.
+            // Имя файла: Elephant-Pinecone-Viewer-1.0.0.jar
+            // Мы проверяем, что имя начинается на "Elephant-Pinecone-Viewer" и заканчивается на ".jar"
+            if (name.startsWith("Elephant-Pinecone-Viewer") && name.endsWith(".jar")) {
+                return asset.path("browser_download_url").asText();
             }
         }
-        return null; // или выбросить исключение
+
+        return null;
     }
 }
