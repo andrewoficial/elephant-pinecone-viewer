@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.model.ReleaseInfo;
 import ru.kantser.pineview.domain.port.DownloadPort;
 import ru.kantser.pineview.domain.usecase.CheckForUpdatesUseCase;
-
 import java.io.IOException;
 
 public class UpdateDialog extends Dialog<Void> {
@@ -26,6 +25,7 @@ public class UpdateDialog extends Dialog<Void> {
     @FXML private Label downloadStatusLabel;
     @FXML private Label statusLabel;
 
+    //dependencies
     private final CheckForUpdatesUseCase updatesUseCase;
 
     // === Внедрение зависимости через конструктор ===

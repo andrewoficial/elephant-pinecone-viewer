@@ -5,17 +5,14 @@ import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.model.HealthReport;
 import ru.kantser.pineview.domain.model.ServiceStatus;
 import ru.kantser.pineview.domain.port.HealthCheckPort;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-/**
- * Use Case: Периодически проверять список сервисов и уведомлять наблюдателя
- */
 public class HealthMonitorService {
     private static final Logger log = LoggerFactory.getLogger(HealthMonitorService.class);
 
+    // Dependencies
     private final HealthCheckPort healthChecker;
     private final Map<String, String> servicesToMonitor;
     private final Consumer<HealthReport> onStatusUpdate;
@@ -87,7 +84,7 @@ public class HealthMonitorService {
                         onStatusUpdate.accept(report);
                     })
                     .exceptionally(ex -> {
-                        log.error("[HealthMonitorService] [checkAllNow] - Health check failed for {}: {}",
+                        log.warn("[HealthMonitorService] [checkAllNow] - Health check failed for {}: {}",
                                 serviceName, ex.getMessage(), ex);
 
                         onStatusUpdate.accept(new HealthReport(

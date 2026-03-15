@@ -3,9 +3,6 @@ package ru.kantser.pineview.domain.usecase;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-/**
- * Сервис конвертации текста (разделенного табуляцией) в Markdown.
- */
 public class WordTableConverter {
 
     public String convert(String rawText) {

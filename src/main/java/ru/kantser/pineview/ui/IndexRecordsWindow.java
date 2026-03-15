@@ -14,16 +14,16 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kantser.pineview.adapter.embedding.MockEmbeddingAdapter;
-import ru.kantser.pineview.adapter.pinecone.PineconeApiAdapter;
+import ru.kantser.pineview.domain.error.ImportException;
 import ru.kantser.pineview.domain.model.RecordData;
 import ru.kantser.pineview.domain.port.RecordPort;
-import ru.kantser.pineview.domain.usecase.RecordService;
+import ru.kantser.pineview.domain.usecase.ImportFromFileUseCase;
+import ru.kantser.pineview.domain.usecase.SaveRecordUseCase;
 import ru.kantser.pineview.ui.model.RecordViewModel;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class IndexRecordsWindow {
@@ -45,25 +45,25 @@ public class IndexRecordsWindow {
     @FXML private TextArea detailMetadata;
     @FXML private Label vectorSummary;
     @FXML private TextArea detailVector;
-
-    // Новые элементы
     @FXML private Button toggleMetaVectorBtn;
     @FXML private HBox metaVectorBox;
 
-    // Dependencies
-    private RecordPort recordPort;
-    private RecordService recordService;
-    private String indexName;
-
     // State
+    private String indexName;
     private final ObservableList<RecordViewModel> records = FXCollections.observableArrayList();
     private RecordViewModel selectedRecord;
 
-    public void init(RecordPort recordPort, String indexName, String apiKey) {
-        this.recordPort = recordPort;
-        this.indexName = indexName;
-        this.recordService = new RecordService(recordPort, new MockEmbeddingAdapter());
+    // Dependencies
+    private SaveRecordUseCase saveRecordUseCase;
+    private ImportFromFileUseCase importFromFileUseCase;
+    private RecordPort recordPort;
 
+    public void init(SaveRecordUseCase saveUseCase, ImportFromFileUseCase importUseCase,
+                     RecordPort recordPort, String indexName) {
+        this.saveRecordUseCase = saveUseCase;
+        this.importFromFileUseCase = importUseCase;
+        this.indexName = indexName;
+        this.recordPort = recordPort;
         indexNameLabel.setText("📦 " + indexName);
         setupTable();
         loadRecords();
@@ -154,6 +154,7 @@ public class IndexRecordsWindow {
     private void loadRecords() {
         log.info("Loading records for index: {}", indexName);
         recordCountLabel.setText("(loading...)");
+
         recordPort.fetchAllRecords(indexName)
                 .thenAccept(this::handleLoadSuccess)
                 .exceptionally(ex -> {
@@ -295,21 +296,37 @@ public class IndexRecordsWindow {
             });
 
             dialog.showAndWait().ifPresent(result -> {
-                recordService.saveRecord(indexName, result.id, result.text, Map.of())
+                saveRecordUseCase.saveToIndex(indexName, result.id, result.text, Map.of())
                         .thenRun(() -> Platform.runLater(() -> { loadRecords(); showAlert("Success", "Record saved"); }))
                         .exceptionally(ex -> { Platform.runLater(() -> showAlert("Error", ex.getMessage())); return null; });
             });
         } catch (Exception e) { showAlert("Error", e.getMessage()); }
     }
 
-    @FXML private void handleImport() {
+    @FXML
+    private void handleImport() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Lines", "*.jsonl"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Data Files", "*.jsonl", "*.xml"));
         File file = fileChooser.showOpenDialog(recordsTable.getScene().getWindow());
+
         if (file != null) {
-            recordService.importFromFile(indexName, file)
-                    .thenAccept(result -> Platform.runLater(() -> { loadRecords(); showAlert("Import", "Imported " + result.successCount); }))
-                    .exceptionally(ex -> { Platform.runLater(() -> showAlert("Error", ex.getMessage())); return null; });
+            // ✅ Используем правильный UseCase
+            CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return importFromFileUseCase.importFile(file, "UTF-8");
+                        } catch (ImportException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .thenAccept(result -> Platform.runLater(() -> {
+                        loadRecords(); // Обновляем таблицу
+                        showAlert("Import", String.format("Loaded %d / %d records",
+                                result.successfullySaved(), result.totalParsed()));
+                    }))
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> showAlert("Error", ex.getCause().getMessage()));
+                        return null;
+                    });
         }
     }
 

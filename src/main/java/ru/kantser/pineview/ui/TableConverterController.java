@@ -14,7 +14,7 @@ public class TableConverterController {
     @FXML private TextArea inputArea;
     @FXML private TextArea outputArea;
 
-    // Зависимость (можно внедрить через конструктор или создать тут, так как это простая утилита)
+    // dependencies
     private final WordTableConverter converter = new WordTableConverter();
 
     @FXML

@@ -2,7 +2,6 @@ package ru.kantser.pineview.ui.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.kantser.pineview.domain.model.RecordData;
-
 import java.util.Map;
 
 public class RecordViewModel {
@@ -22,7 +21,6 @@ public class RecordViewModel {
         this.dimension = vector != null ? vector.length : 0;
     }
 
-    // Getters and helper methods (extractText, formatMetadata) moved here as is
     private String extractText(Map<String, Object> metadata) {
         if (metadata == null) return "";
         Object t = metadata.get("text");

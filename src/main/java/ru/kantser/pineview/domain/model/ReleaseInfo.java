@@ -11,7 +11,6 @@ public class ReleaseInfo {
         this.downloadUrl = downloadUrl;
     }
 
-    // геттеры
     public String getVersion() { return version; }
     public String getReleaseNotes() { return releaseNotes; }
     public String getDownloadUrl() { return downloadUrl; }

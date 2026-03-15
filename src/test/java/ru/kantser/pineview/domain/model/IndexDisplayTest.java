@@ -76,6 +76,6 @@ class IndexDisplayTest {
 
         // Assert
         assertEquals("unknown", display.getName(), "При null модели имя должно быть 'unknown'");
-        assertEquals("⚠️ Error", display.getStatus(), "При null модели статус должен быть Error");
+        assertEquals(" Error", display.getStatus(), "При null модели статус должен быть Error");
     }
 }

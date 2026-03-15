@@ -26,8 +26,6 @@ public class OkHttpHealthChecker implements HealthCheckPort {
 
     @Override
     public CompletableFuture<HealthReport> checkHealth(String serviceName, String url) {
-        log.debug("[OkHttpHealthChecker] [checkHealth] - Checking health for {} at URL: {}", serviceName, url);
-
         return CompletableFuture.supplyAsync(() -> {
             long start = System.currentTimeMillis();
             try {
@@ -36,11 +34,11 @@ public class OkHttpHealthChecker implements HealthCheckPort {
 
                 try (Response response = client.newCall(request).execute()) {
                     long responseTime = System.currentTimeMillis() - start;
-                    boolean isOk = response.isSuccessful() && response.code() < 400;
+                    boolean isOk = (response.code() < 400 || response.code() == 401);
 
                     log.debug("[OkHttpHealthChecker] [checkHealth] - Response received: code={}, time={}ms, successful={}",
                             response.code(), responseTime, isOk);
-
+                    log.debug("Check trololo {} URL {} isOK {} status {}", serviceName, url, isOk, response.code());
                     HealthReport report = new HealthReport(
                             serviceName,
                             url,
@@ -50,7 +48,7 @@ public class OkHttpHealthChecker implements HealthCheckPort {
                     );
 
                     if (isOk) {
-                        log.info("[OkHttpHealthChecker] [checkHealth] - {} is ONLINE ({}ms)", serviceName, responseTime);
+                        log.debug("[OkHttpHealthChecker] [checkHealth] - {} is ONLINE ({}ms)", serviceName, responseTime);
                     } else {
                         log.warn("[OkHttpHealthChecker] [checkHealth] - {} is OFFLINE: HTTP {}", serviceName, response.code());
                     }

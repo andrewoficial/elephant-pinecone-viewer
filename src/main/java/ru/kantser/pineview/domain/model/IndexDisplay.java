@@ -16,11 +16,10 @@ public class IndexDisplay {
     private final StringProperty environment = new SimpleStringProperty();
 
     public IndexDisplay(IndexModel model) {
-        // 👇 Защита от null модели
         if (model == null) {
             log.warn("[IndexDisplay] Received null model");
             this.name.set("unknown");
-            this.status.set("⚠️ Error");
+            this.status.set(" Error");
             return;
         }
 

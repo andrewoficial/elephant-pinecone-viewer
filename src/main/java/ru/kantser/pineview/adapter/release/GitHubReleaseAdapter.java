@@ -5,16 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.model.ReleaseInfo;
 import ru.kantser.pineview.domain.port.ReleaseInfoPort;
-
 import java.io.IOException;
 
 public class GitHubReleaseAdapter implements ReleaseInfoPort {
+    private static final Logger log = LoggerFactory.getLogger(GitHubReleaseAdapter.class);
 
-    // Ваш репозиторий
     private static final String REPO_API = "https://api.github.com/repos/andrewoficial/elephant-pinecone-viewer/releases/latest";
-
     private final OkHttpClient client = new OkHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -33,7 +33,6 @@ public class GitHubReleaseAdapter implements ReleaseInfoPort {
             String responseBody = response.body() != null ? response.body().string() : "{}";
             JsonNode root = mapper.readTree(responseBody);
 
-            // GitHub теги обычно с префиксом 'v' (v1.0.0), мы его отрезаем для сравнения версий
             String tag = root.path("tag_name").asText();
             String version = tag.startsWith("v") ? tag.substring(1) : tag;
 
@@ -54,9 +53,6 @@ public class GitHubReleaseAdapter implements ReleaseInfoPort {
         for (JsonNode asset : assets) {
             String name = asset.path("name").asText();
 
-            // Ищем наш "толстый" JAR.
-            // Имя файла: Elephant-Pinecone-Viewer-1.0.0.jar
-            // Мы проверяем, что имя начинается на "Elephant-Pinecone-Viewer" и заканчивается на ".jar"
             if (name.startsWith("Elephant-Pinecone-Viewer") && name.endsWith(".jar")) {
                 return asset.path("browser_download_url").asText();
             }

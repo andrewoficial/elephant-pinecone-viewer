@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.db_control.client.model.IndexList;
 import org.openapitools.db_control.client.model.IndexModel;
+import ru.kantser.pineview.Constants;
 import ru.kantser.pineview.domain.model.HealthReport;
 import ru.kantser.pineview.domain.model.RecordData;
 import ru.kantser.pineview.domain.model.ServiceStatus;
@@ -177,7 +178,7 @@ class PineconeApiAdapterTest {
         verify(mockIndex).delete(
                 eq(List.of("id-to-delete")),
                 eq(false),
-                eq("__default__"),
+                eq(Constants.DEFAULT_INDEXES_NAMESPACE),
                 isNull()
         );
     }

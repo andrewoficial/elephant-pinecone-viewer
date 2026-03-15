@@ -5,10 +5,12 @@ import io.pinecone.clients.Index;
 import org.openapitools.db_control.client.model.IndexList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kantser.pineview.Constants;
 import ru.kantser.pineview.domain.model.HealthReport;
 import ru.kantser.pineview.domain.model.RecordData;
 import ru.kantser.pineview.domain.model.ServiceStatus;
-import ru.kantser.pineview.domain.port.HealthCheckPort;
+import ru.kantser.pineview.domain.port.ConnectionPort;
+import ru.kantser.pineview.domain.port.IndexPort;
 import ru.kantser.pineview.domain.port.RecordPort;
 
 import java.util.ArrayList;
@@ -16,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class PineconeApiAdapter implements HealthCheckPort, RecordPort {
+public class PineconeApiAdapter implements RecordPort, IndexPort, ConnectionPort {
     private static final Logger log = LoggerFactory.getLogger(PineconeApiAdapter.class);
 
     private Pinecone pinecone;
@@ -96,6 +98,7 @@ public class PineconeApiAdapter implements HealthCheckPort, RecordPort {
     }
 
     // Метод для получения списка индексов (для будущего UI)
+    @Override
     public CompletableFuture<List<org.openapitools.db_control.client.model.IndexModel>> fetchIndexes() {
         log.info("[PineconeApiAdapter] [fetchIndexes] - Fetching indexes");
 
@@ -131,6 +134,7 @@ public class PineconeApiAdapter implements HealthCheckPort, RecordPort {
      * Получить все записи из индекса
      * ⚠️ Внимание: для больших индексов (>10000) нужна пагинация!
      */
+    @Override
     public CompletableFuture<List<RecordData>> fetchAllRecords(String indexName) {
         return CompletableFuture.supplyAsync(() -> {
             log.info("Fetching all records from index: {}", indexName);
@@ -343,7 +347,7 @@ public class PineconeApiAdapter implements HealthCheckPort, RecordPort {
                     com.google.protobuf.Struct filter
                 )
                  */
-                index.delete(List.of(id), false, "__default__", null);
+                index.delete(List.of(id), false, Constants.DEFAULT_INDEXES_NAMESPACE, null);
                 log.info("Delete successful: {}", id);
             } catch (Exception e) {
                 log.error("Delete failed for {}", id, e);

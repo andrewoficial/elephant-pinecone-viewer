@@ -6,7 +6,6 @@ import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kantser.pineview.domain.port.DownloadPort;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
