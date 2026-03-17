@@ -10,5 +10,6 @@ public interface RecordPort {
 
     CompletableFuture<Void> upsertRecord(String indexName, String id, float[] vector, Map<String, Object> metadata);
 
+
     CompletableFuture<Void> deleteRecord(String indexName, String id);
 }

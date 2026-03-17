@@ -96,9 +96,10 @@ public class ImportFromFileUseCase {
         for (ImportItem item : items) {
             try {
                 RecordData record = convertToRecord(item);
-                // ✅ Используем константу вместо хардкода
-                recordPort.upsertRecord(Constants.DEFAULT_INDEXES_NAMESPACE, record.id(), record.vector(), record.metadata())
-                        .get();
+                record.metadata().put("text", item.text());
+                record.metadata().put("original_text", item.text());
+                record.metadata().put("saved_at", System.currentTimeMillis());
+                recordPort.upsertRecord(Constants.CURRENT_AREA, record.id(), record.vector(), record.metadata()).get();
                 saved++;
             } catch (Exception e) {
                 log.warn("Failed to save item {}: {}", item.id(), e.getMessage());

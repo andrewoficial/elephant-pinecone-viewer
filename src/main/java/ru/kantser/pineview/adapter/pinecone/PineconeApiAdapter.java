@@ -14,9 +14,11 @@ import ru.kantser.pineview.domain.port.IndexPort;
 import ru.kantser.pineview.domain.port.RecordPort;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PineconeApiAdapter implements RecordPort, IndexPort, ConnectionPort {
     private static final Logger log = LoggerFactory.getLogger(PineconeApiAdapter.class);
@@ -282,7 +284,6 @@ public class PineconeApiAdapter implements RecordPort, IndexPort, ConnectionPort
             }
         });
     }
-
     /**
      * Вспомогательный метод: конвертирует Java Map в protobuf Struct
      */

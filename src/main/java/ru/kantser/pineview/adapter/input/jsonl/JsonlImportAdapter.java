@@ -63,6 +63,7 @@ public class JsonlImportAdapter implements ImportPort {
     private ImportItem mapToImportItem(Map<String, Object> json) {
         String id = (String) json.get("id");
         String text = (String) json.get("text");
+        log.info(text);
         Map<String, Object> metadata = extractMetadata(json);
         return new ImportItem(id, text, metadata);
     }

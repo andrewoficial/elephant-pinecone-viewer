@@ -22,7 +22,8 @@ public class SaveRecordUseCase {
     }
 
     public CompletableFuture<Void> save(String id, String text, Map<String, Object> metadata) {
-        return saveToIndex(Constants.DEFAULT_INDEXES_NAMESPACE, id, text, metadata);
+        return saveToIndex("general_provisions", id, text, metadata);
+        //_default_
     }
 
     public CompletableFuture<Void> saveToIndex(String indexName, String id, String text, Map<String, Object> metadata) {
@@ -39,11 +40,14 @@ public class SaveRecordUseCase {
                     // Подготовка метаданных
                     Map<String, Object> finalMetadata = new HashMap<>(metadata != null ? metadata : Map.of());
                     finalMetadata.put("original_text", text);
+                    finalMetadata.put("text", text);
                     finalMetadata.put("source", "manual-entry");
                     finalMetadata.put("saved_at", System.currentTimeMillis());
 
+                    float[] def = new float[2048];
+                    def[1] = 0.005F;
                     // Сохранение в векторную БД
-                    return recordPort.upsertRecord(indexName, id, vector, finalMetadata);
+                    return recordPort.upsertRecord(indexName, id, def, finalMetadata);
                 })
                 .exceptionally(ex -> {
                     log.error("Failed to save record {}: {}", id, ex.getMessage());
