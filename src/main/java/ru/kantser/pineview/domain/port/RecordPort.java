@@ -8,8 +8,10 @@ import java.util.concurrent.CompletableFuture;
 public interface RecordPort {
     CompletableFuture<List<RecordData>> fetchAllRecords(String indexName);
 
+    @Deprecated
     CompletableFuture<Void> upsertRecord(String indexName, String id, float[] vector, Map<String, Object> metadata);
 
+    CompletableFuture<Void> upsertTextRecord(String indexName, String id, String text, Map<String, Object> metadata);
 
     CompletableFuture<Void> deleteRecord(String indexName, String id);
 }

@@ -130,7 +130,39 @@ public class PineconeApiAdapter implements RecordPort, IndexPort, ConnectionPort
         });
     }
 
+    @Override
+    public CompletableFuture<Void> upsertTextRecord(String indexName, String id, String text, Map<String, Object> metadata) {
+        return CompletableFuture.runAsync(() -> {
+            log.info("Upserting text record {} to index {}", id, indexName);
 
+            try {
+                Index index = pinecone.getIndexConnection(indexName);
+
+                // Собираем запись в формате, ожидаемом upsertRecords()
+                Map<String, String> record = new HashMap<>();
+                record.put("_id", id);
+                // Поле для текста должно совпадать с field_map, указанным при создании индекса.
+                // Обычно это "chunk_text" (как в примере) или "text". Уточните в настройках вашего индекса.
+                record.put("text", text);
+
+                for (Map.Entry<String, Object> stringObjectEntry : metadata.entrySet()) {
+                    record.put(stringObjectEntry.getKey(), stringObjectEntry.getValue().toString());
+                }
+
+                // Вызываем upsertRecords для одной записи
+                index.upsertRecords(
+                        Constants.DEFAULT_INDEXES_NAMESPACE, // namespace (пустой, если не используете)
+                        List.of(record)
+                );
+
+                log.info("Text upsert successful: {}", id);
+
+            } catch (Exception e) {
+                log.error("Text upsert failed for {}", id, e);
+                throw new RuntimeException("Text upsert failed: " + e.getMessage(), e);
+            }
+        });
+    }
 
     /**
      * Получить все записи из индекса

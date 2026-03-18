@@ -142,14 +142,14 @@ public class MainWindow {
                 if (event.getClickCount() == 2 && !row.isEmpty()) {
                     IndexDisplay selected = row.getItem();
                     log.info("Double-clicked index: {}", selected.getName());
-                    openIndexRecordsWindow(selected.getName());
+                    openIndexRecordsWindow(selected.getName(), selected.getDimension());
                 }
             });
             return row;
         });
     }
 
-    private void openIndexRecordsWindow(String indexName) {
+    private void openIndexRecordsWindow(String indexName, int dimensions) {
         try {
             log.info("Opening records window for index: {}", indexName);
 
@@ -169,7 +169,7 @@ public class MainWindow {
 
             IndexRecordsWindow controller = loader.getController();
 
-            controller.init(saveRecordUseCase, importFromFileUseCase, recordPort, indexName);
+            controller.init(saveRecordUseCase, importFromFileUseCase, recordPort, indexName, dimensions);
 
             Stage stage = new Stage();
             stage.setTitle("📦 Records: " + indexName);

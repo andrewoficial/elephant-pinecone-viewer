@@ -52,6 +52,7 @@ public class IndexRecordsWindow {
     private String indexName;
     private final ObservableList<RecordViewModel> records = FXCollections.observableArrayList();
     private RecordViewModel selectedRecord;
+    private int dimensions;
 
     // Dependencies
     private SaveRecordUseCase saveRecordUseCase;
@@ -59,11 +60,12 @@ public class IndexRecordsWindow {
     private RecordPort recordPort;
 
     public void init(SaveRecordUseCase saveUseCase, ImportFromFileUseCase importUseCase,
-                     RecordPort recordPort, String indexName) {
+                     RecordPort recordPort, String indexName, int dimensions) {
         this.saveRecordUseCase = saveUseCase;
         this.importFromFileUseCase = importUseCase;
         this.indexName = indexName;
         this.recordPort = recordPort;
+        this.dimensions = dimensions;
         indexNameLabel.setText("📦 " + indexName);
         setupTable();
         loadRecords();
@@ -266,7 +268,6 @@ public class IndexRecordsWindow {
     }
 
     private void openRecordEditor(RecordViewModel existing) {
-        // (Код диалога редактирования остается без изменений)
         try {
             Dialog<RecordEditResult> dialog = new Dialog<>();
             dialog.setTitle(existing == null ? "➕ Add Record" : "✏️ Edit Record");
@@ -275,15 +276,19 @@ public class IndexRecordsWindow {
             GridPane grid = new GridPane();
             grid.setHgap(10); grid.setVgap(10);
             grid.setPadding(new Insets(20, 150, 10, 10));
+
             TextField idField = new TextField(existing != null ? existing.getId() : "");
             idField.setPromptText("Record ID");
             if (existing != null) idField.setDisable(true);
+
             TextArea textField = new TextArea(existing != null ? existing.getFullText() : "");
             textField.setPromptText("Text content");
             textField.setPrefHeight(100);
 
-            grid.add(new Label("ID:"), 0, 0); grid.add(idField, 1, 0);
-            grid.add(new Label("Text:"), 0, 1); grid.add(textField, 1, 1);
+            grid.add(new Label("ID:"), 0, 0);
+            grid.add(idField, 1, 0);
+            grid.add(new Label("Text:"), 0, 1);
+            grid.add(textField, 1, 1);
 
             dialog.getDialogPane().setContent(grid);
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/ru/kantser/pineview/styles.css").toExternalForm());
@@ -297,10 +302,18 @@ public class IndexRecordsWindow {
 
             dialog.showAndWait().ifPresent(result -> {
                 saveRecordUseCase.saveToIndex(indexName, result.id, result.text, Map.of())
-                        .thenRun(() -> Platform.runLater(() -> { loadRecords(); showAlert("Success", "Record saved"); }))
-                        .exceptionally(ex -> { Platform.runLater(() -> showAlert("Error", ex.getMessage())); return null; });
+                        .thenRun(() -> Platform.runLater(() -> {
+                            loadRecords();
+                            showAlert("Success", "Record saved");
+                        }))
+                        .exceptionally(ex -> {
+                            Platform.runLater(() -> showAlert("Error", ex.getMessage()));
+                            return null;
+                        });
             });
-        } catch (Exception e) { showAlert("Error", e.getMessage()); }
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage());
+        }
     }
 
     @FXML
@@ -333,6 +346,7 @@ public class IndexRecordsWindow {
     @FXML private void handleClose() { ((Stage) recordsTable.getScene().getWindow()).close(); }
     private void showAlert(String title, String message) { new Alert(Alert.AlertType.INFORMATION, message).showAndWait(); }
 
+    // Вспомогательный record без поля dimensions
     private record RecordEditResult(String id, String text) {}
 
 }
